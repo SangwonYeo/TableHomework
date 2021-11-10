@@ -1,0 +1,60 @@
+package com.studio572.samplerunonuithread;
+
+import android.graphics.Color;
+import android.os.Handler;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+
+public class MainActivity extends AppCompatActivity {
+
+    private TextView textView;
+    private Button button01, button02;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = (TextView) findViewById(R.id.textView);
+        button01 = (Button) findViewById(R.id.button01);
+        button02 = (Button) findViewById(R.id.button02);
+
+        button01.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Thread를 생성한다.
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Thread 안에서 바로 UI작업을 한다.
+                        textView.setText("Thread에서 UI 변경하는 메소드 호출");
+                        textView.setBackgroundColor(Color.BLUE);
+                    }
+                }).start();
+            }
+        });
+        button02.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Thread를 생성한다.
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // runOnUiThread를 추가하고 그 안에 UI작업을 한다.
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                textView.setText("Thread에서 UI 변경을 위한 runOnUiThread를 사용한 메소드 호출");
+                                textView.setBackgroundColor(Color.GREEN);
+                            }
+                        });
+                    }
+                }).start();
+            }
+        });
+    }
+}

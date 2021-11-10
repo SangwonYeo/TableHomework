@@ -1,0 +1,202 @@
+package com.example.testapplication;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+
+import org.apache.commons.net.ftp.FTP;
+import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPFile;
+import org.apache.commons.net.ftp.FTPReply;
+
+import android.os.Environment;
+import android.util.Log;
+
+
+public class FTPUtil {
+
+    String SERVERIP = "210.223.38.169";
+    int PORT = 2121;
+    String SERVERID = "test2";
+    String SERVERPW = "qwer1234";
+    FTPClient ftpClient=new FTPClient();;
+
+    boolean DownloadContents(String filename){
+
+        connect();
+        System.out.println("코넥트 엔드");
+
+        login(SERVERID,SERVERPW);
+        System.out.println("로그인 완료");
+
+        cd("/storage/emulated/0/DCIM/");//input u r directory
+
+        FTPFile[] files = list();
+        if(files==null){
+            return false;
+        }
+
+        ArrayList<String> ImageIds_tmp = new ArrayList<String>();
+        for(int i =0 ;i<files.length;i++){
+
+            String fileName = files[i].getName();
+            String extension = fileName.substring(fileName.lastIndexOf(".") + 1);
+            System.out.println("파일네임"+" "+fileName);
+
+            long size = files[i].getSize();
+            extension=extension.toUpperCase();
+            System.out.println("size : " +" "+size);
+
+            if (size > 0) {
+
+                for(int j=0;j<size;j++){
+
+                    if(filename.equalsIgnoreCase(fileName.substring(0, fileName.indexOf(".")))){
+
+                        StringBuffer furl = new StringBuffer("/storage/emulated/0/Download");
+                        System.out.println("버퍼네임"+furl);
+                        furl.append(fileName);
+                        ImageIds_tmp.add(furl.toString());
+                        System.out.println("get들어가기 전" +" "+fileName);
+                        get(fileName, fileName);
+                    }
+                }
+            }
+        }
+        logout();
+        disconnect();
+        return true;
+    }
+
+    public boolean login(String user, String password) {
+        try {
+            this.connect();
+
+            System.out.println(ftpClient.login("test2", "qwer1234"));
+            return this.ftpClient.login(user, password);
+        }
+        catch (IOException ioe) {
+
+            System.out.println(ioe.toString());
+            ioe.printStackTrace();
+        }
+        return false;
+    }
+
+    private boolean logout() {
+        try {
+            return this.ftpClient.logout();
+        }
+        catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+        return false;
+    }
+
+    public void connect() {
+        try {
+
+
+            ftpClient.connect("210.223.38.169", 2121);
+
+            int reply;
+            reply = this.ftpClient.getReplyCode();
+
+            if(!FTPReply.isPositiveCompletion(reply)) {
+                this.ftpClient.disconnect();
+            }
+
+        }
+        catch (IOException ioe) {
+            if(this.ftpClient.isConnected()) {
+                try {
+                    this.ftpClient.disconnect();
+                } catch(IOException f) {;}
+            }
+        }
+    }
+
+    public FTPFile[] list() {
+        FTPFile[] files = null;
+        try {
+            files = this.ftpClient.listFiles();
+            return files;
+        }
+        catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+        return null;
+    }
+
+    public File get(String source, String target) {
+
+        FileOutputStream output = null;
+
+        try {
+
+            //StringBuffer furl = new StringBuffer("/storage/emulated/0/Download");
+            String furl = Environment.getExternalStorageDirectory().getAbsolutePath();
+
+            File path = new File(furl.toString());
+            System.out.println("path : " + " "+path);
+
+            if(! path.isDirectory()) {
+                
+                System.out.println("디렉토리 없음");
+                path.mkdirs();
+            }
+
+           // furl.append(target);
+            System.out.println("target = "+target);
+            File local = new File("/storage/emulated/0/DCIM/"+"VivaVideo/Image11.jpg");
+            System.out.println("local = "+local);
+
+            if(local.isFile()){
+                
+                System.out.println("File 없음");
+                return null;
+            }
+            
+            System.out.println("이까지는 됨");
+            output = new FileOutputStream(local);
+            System.out.println("output = "+output);
+        }
+        
+        catch (FileNotFoundException fnfe) {;}
+
+        File file = new File(source);
+        try {
+            if (this.ftpClient.retrieveFile(source, output)) {
+                
+                System.out.println("마지막");
+                return file;
+            }
+        }
+        catch (IOException ioe) {;}
+        return null;
+    }
+
+    public void cd(String path) {
+        try {
+            this.ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+            this.ftpClient.enterLocalPassiveMode();
+            this.ftpClient.changeWorkingDirectory(path);
+        }
+        catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+    }
+
+    private void disconnect() {
+        try {
+            this.ftpClient.disconnect();
+        }
+        catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+    }
+}
+
